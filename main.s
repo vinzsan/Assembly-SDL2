@@ -33,6 +33,8 @@
 .equ SDL_SCANCODE_4,33
 .equ SDL_SCANCODE_5,34
 .equ SDL_SCANCODE_6,35
+.equ SDL_SCANCODE_7,36
+.equ SDL_SCANCODE_8,37
 .equ SDL_INIT_EVERYTHING,62001
 .equ IMG_INIT_JPG,1
 
@@ -48,6 +50,9 @@
 
   FMT: .string "%d\n"
   FMT_P: .string "PTR : %p\n"
+
+  FMT_CL1: .string "Color r15d : %d\n"
+  FMT_CL2: .string "Color r12d : %d\n"
 
   FMT_F: .string "Memory telah di bebaskan sebanyak : %d = %p\n"
 
@@ -174,6 +179,7 @@ TEXT_L02:
 
   mov r14d,100
   xor r15,r15
+  xor r12,r12
   mov QWORD ptr [rbp - 16],r15
   mov QWORD ptr [rbp - 8],1
   mov QWORD ptr [rbp - 24],0 
@@ -225,6 +231,13 @@ L02:
   test eax,eax 
   jnz IF02
 
+  movzx eax,BYTE ptr [r13 + SDL_SCANCODE_7]
+  test eax,eax
+  jnz IF11 
+
+  movzx eax,BYTE ptr [r13 + SDL_SCANCODE_8]
+  test eax,eax
+  jnz IF12 
   # init and clamp
   
   jmp IF3
@@ -296,6 +309,34 @@ IF7:
   mov QWORD ptr [rbp - 16],1 
   jmp R01
 
+IF11:
+
+  add r12d,10 
+  jmp IF13 
+
+IF12:
+
+  sub r12d,10 
+  jmp IF13
+
+IF13:
+
+  cmp r12d,0 
+  jle IF14
+  cmp r12d,255 
+  jge IF15
+  jmp R01
+
+IF14:
+
+  mov r12d,0 
+  jmp R01 
+
+IF15:
+
+  mov r12d,255 
+  jmp R01
+
 R01:
 
   mov rdi,QWORD ptr [rip + render_t]
@@ -304,9 +345,19 @@ R01:
   mov rdi,QWORD ptr [rip + render_t]
   mov esi,r14d
   mov edx,r14d
-  mov ecx,100
-  mov r8d,255
+  mov ecx,r12d
+  mov r8d,r12d
   call SDL_SetRenderDrawColor
+
+  lea rdi,[rip + FMT_CL1]
+  mov esi,r14d 
+  xor eax,eax
+  call printf
+
+  lea rdi,[rip + FMT_CL2]
+  mov esi,r12d
+  xor eax,eax 
+  call printf
 
   lea rbx,[rip + texture_t]
   xor r15,r15
